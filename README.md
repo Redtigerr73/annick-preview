@@ -15,7 +15,7 @@ reprennent la structure des documents du cabinet, aucune réponse réelle.
 | `index.html` | Site vitrine, carnet « surlignez ce qui vous parle » |
 | `rendez-vous.html` | Prise de rendez-vous avec les règles du cabinet |
 | `questionnaire.html` | Questionnaire en 9 étapes, brouillon local |
-| `espace.html` | Espace praticienne : tableau de bord, agenda, patients, messages, statistiques, automatisations, assistant IA, conformité |
+| `espace.html` | Espace praticienne : cockpit du jour, parcours des patients par étape, agenda, fiches, messages, statistiques, automatisations (phases × rôles), assistant IA, conformité |
 | `pourquoi.html` | Avant / après, processus par processus |
 
 ## Lancer et tester

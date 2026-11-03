@@ -94,20 +94,21 @@
       /* Parcours : certains ont déjà eu RDV1 (et RDV2), d'autres attendent leur premier rendez-vous */
       const stage = n % 4; // 0 : à venir RDV1 ; 1 : RDV1 passé, RDV2 à venir ; 2 : RDV1 et RDV2 passés, suivi à venir ; 3 : RDV1 bientôt
       const add = (type, slot, status) => appointments.push({ id: 'a' + (appointments.length + 1), patient: id, type, lieu, date: slot.date, time: slot.time, status, bookedOn: E.iso(E.addDays(slot.date, -50)) });
-      if (stage === 0) add('rdv1', pick(todayIdx + 8, days.length - 1), 'prevu');
+      if (stage === 0) add('rdv1', pick(n % 8 === 0 ? todayIdx + 8 : todayIdx + 26, days.length - 1), 'prevu');
       if (stage === 3) add('rdv1', pick(todayIdx, todayIdx + 6), 'prevu');
-      if (stage >= 1 && stage <= 2) {
-        add('rdv1', pick(2, todayIdx - 20), 'fait');
-        if (stage === 1) add('rdv2', pick(todayIdx, todayIdx + 30), 'prevu');
-        if (stage === 1 && n % 8 === 5) add('suivi', pick(todayIdx - 16, todayIdx - 3), 'absent');
-        else { add('rdv2', pick(todayIdx - 18, todayIdx - 2), 'fait'); add('suivi', pick(todayIdx + 3, days.length - 1), 'prevu'); }
-      }
+      /* stage 1 : biologie en attente (n % 8 === 1) ou RDV 2 replanifié après une absence (n % 8 === 5) ; stage 2 : en suivi */
+      if (stage === 1 && n % 8 === 1) add('rdv1', pick(todayIdx - 34, todayIdx - 6), 'fait');
+      if (stage === 1 && n % 8 === 5) { add('rdv1', pick(2, todayIdx - 30), 'fait'); add('rdv2', pick(todayIdx - 16, todayIdx - 3), 'absent'); add('rdv2', pick(todayIdx + 1, todayIdx + 20), 'prevu'); }
+      if (stage === 2) { add('rdv1', pick(2, todayIdx - 30), 'fait'); add('rdv2', pick(todayIdx - 18, todayIdx - 2), 'fait'); add('suivi', pick(todayIdx + 3, days.length - 1), 'prevu'); }
       /* Questionnaires : reçus pour les parcours entamés, une partie manquante pour les RDV1 à venir */
       const first1 = appointments.filter(a => a.patient === id && a.type === 'rdv1')[0];
-      const received = stage === 1 || stage === 2 || (stage === 0 && r() < .5) || (stage === 3 && n % 8 === 3);
+      const received = stage === 1 || stage === 2 || (stage === 0 && n % 8 === 0) || (stage === 3 && n % 8 === 3);
       if (received) {
         const recvOn = E.iso(E.addDays(first1.date, -(31 + Math.floor(r() * 12))));
-        submissions.push({ id: 'q' + (submissions.length + 1), patient: id, appointment: first1.id, receivedOn: recvOn <= E.iso(today) ? recvOn : E.iso(today), sex, answers: answersFor(r, motif, sex), cortisol: [], source: 'en ligne' });
+        const answers = answersFor(r, motif, sex);
+        /* Points de vigilance réalistes : seuls quelques dossiers en ont */
+        if (n % 5 !== 2) E.RED_FLAGS.forEach(f => { answers[f.axis + ':' + f.item] = 0; });
+        submissions.push({ id: 'q' + (submissions.length + 1), patient: id, appointment: first1.id, receivedOn: recvOn <= E.iso(today) ? recvOn : E.iso(today), sex, answers, cortisol: [], source: 'en ligne' });
       }
       if (stage === 2) notes[id] = 'Biologie reçue. Carence en vitamine D et ferritine basse. Ajustement : magnésium bisglycinate le soir, réintroduction progressive des oméga-3.';
       if (stage === 1) notes[id] = 'RDV 1 fait. Biologie demandée (bilan complet, labo spécialisé). En attente des résultats.';
@@ -133,17 +134,17 @@
     emails.sort((x, y) => (x.at < y.at ? 1 : -1));
 
     return {
-      version: 1, builtOn: E.iso(today), lieux: LIEUX, types: TYPES, patients, appointments, submissions, emails, notes,
+      version: 2, builtOn: E.iso(today), lieux: LIEUX, types: TYPES, patients, appointments, submissions, emails, notes,
       channels: { email: true, sms: true, whatsapp: true },
-      automations: { confirmation: true, rappel1: true, rappel2: true, alerte: true, veille: true, biologie: true, medecin: false, hormonologie: true },
+      automations: { confirmation: true, rappel1: true, rappel2: true, alerte: true, veille: true, biologie: true, medecin: true, hormonologie: true },
     };
   }
 
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (s && s.version === 1 && s.builtOn === E.iso(new Date().setHours(0, 0, 0, 0))) return s;
-      if (s && s.version === 1) { const fresh = build(); fresh.extra = s.extra || { patients: [], appointments: [], submissions: [], emails: [] }; return merge(fresh); }
+      if (s && s.version === 2 && s.builtOn === E.iso(new Date().setHours(0, 0, 0, 0))) return s;
+      if (s && s.version) { const fresh = build(); fresh.extra = s.extra || { patients: [], appointments: [], submissions: [], emails: [] }; return merge(fresh); }
     } catch (e) { /* stockage indisponible : on repart d'une démo neuve */ }
     const fresh = build(); fresh.extra = { patients: [], appointments: [], submissions: [], emails: [] };
     return fresh;

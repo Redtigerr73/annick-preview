@@ -12,19 +12,28 @@
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <div class="app-mobile-head"><b>Espace praticienne</b><button type="button" id="side-open" aria-controls="side" aria-expanded="false">Menu</button></div>
   <div class="app">
-    <aside class="side" id="side">
+    <aside class="side" id="side" aria-label="Navigation de l’espace praticienne">
       <a class="brand" href="#aujourdhui"><b>Espace praticienne</b><span>Annick Dejonckheere · démo</span></a>
-      <nav id="side-nav" aria-label="Espace praticienne"></nav>
+      <nav id="side-nav"></nav>
       <div class="foot">
         <p>Données fictives, enregistrées dans ce navigateur uniquement.</p>
         <p><a href="index.html">Voir le site public</a><br><a href="pourquoi.html">Ce que ça change pour vous</a></p>
       </div>
     </aside>
-    <main class="main" id="view" tabindex="-1"></main>
+    <div class="app-main">
+      <header class="topbar">
+        <button type="button" class="btn ghost sm only-m" id="side-open" aria-controls="side" aria-expanded="false">Menu</button>
+        <span class="tb-title" id="tb-title">Aujourd’hui</span>
+        <div class="tb-search"><input type="search" id="gsearch" placeholder="Rechercher un patient, un motif, une ville" aria-label="Rechercher un patient" autocomplete="off"><div class="gs-res" id="gs-res"></div></div>
+        <div class="tb-ch" id="tb-ch" aria-label="Canaux d’envoi"></div>
+        <a class="btn sm tb-new" href="rendez-vous.html">Nouveau rendez-vous</a>
+      </header>
+      <main class="main" id="view" tabindex="-1"></main>
+    </div>
   </div>
-  <dialog id="dlg" style="border:0;border-radius:14px;padding:0;max-width:640px;width:calc(100% - 32px)"><div id="dlg-body" style="padding:24px"></div></dialog>
+  <nav class="tabbar" id="tabbar" aria-label="Raccourcis"></nav>
+  <dialog id="dlg" style="border:0;border-radius:14px;padding:0;max-width:680px;width:calc(100% - 24px)"><div id="dlg-body" style="padding:20px"></div></dialog>
   <script src="assets/engine.js"></script>
   <script src="assets/data.js"></script>
   <script src="assets/site.js"></script>

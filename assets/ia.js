@@ -91,7 +91,8 @@
     const p = h.P(a.patient), sub = h.subFor(a);
     return `<p class="small"><a href="#ia">Assistant IA</a> · <a href="#patient/${esc(p.id)}">${esc(h.name(p))}</a></p>
       <div class="topline"><div><h1>Consultation de ${esc(h.name(p))}</h1><p>${esc(h.typ(a.type).name)} · ${esc(E.fmt(a.date, true))} · ${esc(a.time.replace(':', ' h '))} · ${esc(h.lieu(a.lieu).short)}</p></div>${DEMO}</div>
-      <div class="notice small">Démonstration : la transcription et le résumé sont simulés, aucun micro n’est utilisé. En service, l’audio est traité dans l’Union européenne, n’est jamais réutilisé pour entraîner un modèle, et il est supprimé dès que le résumé est validé.</div>
+      <ol class="csteps" id="c-steps"><li class="cur"><i>1</i>Accord du patient</li><li><i>2</i>Enregistrement</li><li><i>3</i>Résumé par l’IA</li><li><i>4</i>Votre validation</li><li><i>5</i>Envois</li></ol>
+      <div class="notice ai small">Démonstration : la transcription et le résumé sont simulés, aucun micro n’est utilisé. En service, l’audio est traité dans l’Union européenne, n’est jamais réutilisé pour entraîner un modèle, et il est supprimé dès que le résumé est validé.</div>
       <div class="grid g-main">
         <div class="box" id="c-left">
           <h2>1 · Accord du patient</h2>
@@ -99,7 +100,7 @@
           <label style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><input type="checkbox" id="c-pseudo" checked style="margin-top:5px"> <span>Pseudonymiser la transcription (le nom du patient est remplacé avant tout traitement).</span></label>
           <div class="row" style="margin-top:16px"><button class="btn" type="button" id="c-start" disabled>Démarrer l’enregistrement</button><button class="btn ghost" type="button" id="c-stop" disabled>Terminer et résumer</button><span class="small muted" id="c-timer"></span></div>
           <h2 style="margin-top:24px">2 · Transcription</h2>
-          <div id="c-trans" class="small" style="max-height:440px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--paper)"><p class="muted" style="margin:0">La transcription apparaîtra ici, intervenant par intervenant.</p></div>
+          <div id="c-trans" class="small trans" style="max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg)"><p class="muted" style="margin:0">La transcription apparaîtra ici, intervenant par intervenant.</p></div>
         </div>
         <div class="box" id="c-right">
           <h2>3 · Résumé structuré</h2>
@@ -113,7 +114,8 @@
     const lines = script(p, sub);
     let i = 0, timer = null, t0 = 0;
     const consent = $('#c-consent', root), start = $('#c-start', root), stop = $('#c-stop', root), out = $('#c-trans', root);
-    consent.addEventListener('change', () => { start.disabled = !consent.checked; });
+    const stepTo = n => $$('#c-steps li', root).forEach((li, k) => { li.className = k < n ? 'done' : k === n ? 'cur' : ''; });
+    consent.addEventListener('change', () => { start.disabled = !consent.checked; stepTo(consent.checked ? 1 : 0); });
     start.addEventListener('click', () => {
       start.disabled = true; stop.disabled = false; consent.disabled = true; out.innerHTML = ''; t0 = Date.now();
       const pseudo = $('#c-pseudo', root).checked;
@@ -123,15 +125,15 @@
         const sec = Math.round((Date.now() - t0) / 1000) * 9;
         const shown = pseudo ? txt.split(p.first).join('[Patient]').split(p.last).join('') : txt;
         const el = document.createElement('p');
-        el.innerHTML = `<b>${esc(who === 'Patient' && pseudo ? '[Patient]' : who)}</b> <span class="muted">${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}</span><br>${esc(shown)}`;
+        el.innerHTML = `<b class="${who === 'Patient' ? 'pa' : 'pr'}">${esc(who === 'Patient' && pseudo ? '[Patient]' : who)}</b> <span class="muted">${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}</span><br>${esc(shown)}`;
         out.appendChild(el); out.scrollTop = out.scrollHeight;
-        $('#c-timer', root).textContent = 'Enregistrement en cours · ' + i + '/' + lines.length + ' échanges';
+        $('#c-timer', root).innerHTML = '<span class="rec">Enregistrement en cours · ' + i + '/' + lines.length + ' échanges</span>';
       };
       step(); timer = setInterval(step, 900);
     });
     stop.addEventListener('click', () => {
       clearInterval(timer); while (i < lines.length) { const [who, txt] = lines[i++]; const el = document.createElement('p'); el.innerHTML = `<b>${esc(who)}</b><br>${esc(txt)}`; out.appendChild(el); }
-      stop.disabled = true; $('#c-timer', root).textContent = 'Enregistrement terminé · audio supprimé après validation';
+      stop.disabled = true; stepTo(3); $('#c-timer', root).textContent = 'Enregistrement terminé · audio supprimé après validation';
       const x = summary(p, sub);
       $('#c-sum', root).innerHTML = `<p class="small muted" style="margin-top:-6px">Brouillon rédigé à partir de la transcription et du questionnaire. Chaque partie est modifiable.</p>
         ${SECTIONS.map(([k, l]) => { const val = x[k]; const txt = Array.isArray(val) ? (val.length ? val.map(v => '• ' + v).join('\n') : '• Aucun') : val; return `<div class="field"><label for="s-${k}">${esc(l)}</label><textarea id="s-${k}" data-s="${k}" style="min-height:${Array.isArray(val) ? 70 + val.length * 18 : 70}px">${esc(txt)}</textarea></div>`; }).join('')}
@@ -142,9 +144,9 @@
       const val = k => ($(`[data-s="${k}"]`, root) || {}).value || '';
       $('#s-ok', root).addEventListener('click', () => {
         S.notes = S.notes || {}; S.notes[p.id] = 'Résumé validé le ' + E.fmt(T) + '\n\n' + SECTIONS.map(([k, l]) => l + '\n' + val(k)).join('\n\n');
-        h.persist(); h.toast('Résumé validé et classé au dossier. Audio supprimé.');
+        h.persist(); stepTo(4); h.toast('Résumé validé et classé au dossier. Audio supprimé.');
       });
-      $('#s-doc', root).addEventListener('click', () => {
+      $('#s-doc', root).addEventListener('click', () => { stepTo(5);
         $('#s-out', root).innerHTML = `<p class="lbl">Brouillon · compte rendu au médecin traitant ${DEMO}</p><div class="mail"><header><span><b>À :</b> ${esc(p.doctor || 'médecin traitant')}</span><span><b>Objet :</b> Consultation de nutrithérapie, ${esc(p.first + ' ' + p.last)}</span></header><pre>${esc(`Chère Consœur, cher Confrère,
 
 J’ai reçu ${p.first} ${p.last} le ${E.fmt(a.date)} pour : ${p.motif.toLowerCase()}.
@@ -184,23 +186,48 @@ Volgende stap: tweede afspraak na ontvangst van de resultaten.`)}</pre></div><p 
     });
   }
 
-  /* ---------- catalogue des usages IA et automatisation ---------- */
+  /* ---------- catalogue des usages IA : déclencheur → l'IA prépare → vous validez → résultat ---------- */
+  const ICO = {
+    doc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>',
+    mail: '<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+    note: '<path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h5"/>',
+    lang: '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M11 5c0 4-3 7-6 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/>',
+    letter: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/>',
+  };
+  const ic = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>`;
+  const GROUPS = [['avant', 'Avant la consultation', 'c-saffron'], ['pendant', 'Pendant la consultation', 'c-teal'], ['apres', 'Après la consultation', 'c-orange'], ['quotidien', 'Au quotidien', 'c-slate']];
   const USES = [
-    ['consult', 'Transcrire et résumer la consultation', 'Pendant que vous écoutez, l’outil transcrit ; à la fin, il propose un résumé structuré que vous corrigez et validez.', 'Accord du patient avant tout enregistrement, pseudonymisation, audio supprimé après validation, aucun diagnostic proposé.'],
-    ['pre', 'Préparer la consultation', 'La veille, une synthèse du questionnaire : ce qui ressort, ce qui est absent, les questions à poser, la biologie à envisager.', 'Les scores orientent, ils ne décident pas. Les signes d’alerte sont mis en tête.'],
-    ['bio', 'Lire une prise de sang', 'Le PDF du laboratoire devient un tableau : valeurs, unités, normes du laboratoire, écarts mis en évidence, évolution par rapport au bilan précédent.', 'Les valeurs extraites sont relues ; les normes restent celles du laboratoire.'],
-    ['scan', 'Lire un questionnaire papier', 'Pour les patients qui préfèrent le papier : le scan est lu, les cases cochées deviennent des réponses, les zones incertaines sont signalées.', 'Chaque réponse douteuse est montrée à côté de l’image d’origine.'],
-    ['inbox', 'Trier les e-mails des patients', 'Chaque message est classé : déplacement de rendez-vous, question pratique, résultats, inquiétude médicale. Une réponse est proposée.', 'Rien ne part sans vous ; un message inquiétant renvoie toujours vers le médecin ou le 112.'],
-    ['search', 'Chercher dans vos dossiers', 'Posez la question en français : « mes patients fatigués avec un fer bas », « qui attend encore sa biologie ».', 'La recherche se fait dans vos dossiers uniquement, journalisée.'],
-    ['fiche', 'Rédiger la fiche conseils', 'À partir du résumé validé, une fiche en mots simples pour le patient, dans sa langue.', 'Vous relisez avant remise ; pas de dosage proposé par l’outil.'],
-    ['trad', 'Traduire', 'Questionnaire, e-mails et fiches en néerlandais et en anglais, pour les patients non francophones.', 'Les termes médicaux sont vérifiés.'],
+    { k: 'pre', g: 'avant', ic: 'doc', t: 'Synthèse pré-consultation', w: 'La veille du RDV 1', trig: 'Le questionnaire est reçu et le RDV a lieu demain.', ai: 'Résume les réponses : axes marqués, absences notables, questions à poser, biologie à envisager.', you: 'Vous relisez 2 minutes avant d’accueillir le patient.', res: 'Une page dans la fiche patient.', guard: 'Les scores orientent, ils ne décident pas ; signes d’alerte en tête.' },
+    { k: 'scan', g: 'avant', ic: 'scan', t: 'Questionnaire papier lu', w: 'À réception d’un scan', trig: 'Un patient renvoie son questionnaire scanné par e-mail.', ai: 'Reconnaît les cases cochées et l’écriture, signale les zones incertaines.', you: 'Vous confirmez les réponses douteuses, montrées à côté de l’image.', res: 'Questionnaire complet en ligne, scores calculés.', guard: 'Aucune réponse incertaine n’est retenue sans vous.' },
+    { k: 'trad', g: 'avant', ic: 'lang', t: 'Traduction', w: 'Patient non francophone', trig: 'Le patient choisit le néerlandais ou l’anglais.', ai: 'Traduit questionnaire, e-mails et fiches conseils.', you: 'Vous lisez toujours les réponses en français.', res: 'Le patient est servi dans sa langue.', guard: 'Les termes médicaux sont vérifiés.' },
+    { k: 'consult', g: 'pendant', ic: 'mic', t: 'Transcription et résumé', w: 'Pendant le RDV', trig: 'Vous lancez l’enregistrement, après l’accord du patient.', ai: 'Transcrit par intervenant, écarte le hors-sujet, rédige un résumé en 9 rubriques.', you: 'Vous corrigez et validez le résumé.', res: 'Résumé classé au dossier, audio supprimé.', guard: 'Accord explicite, pseudonymisation, aucun diagnostic proposé.' },
+    { k: 'bio', g: 'apres', ic: 'drop', t: 'Lecture de la prise de sang', w: 'À réception du PDF', trig: 'Le laboratoire envoie les résultats.', ai: 'Extrait valeurs, unités et normes ; met en évidence les écarts et l’évolution.', you: 'Vous interprétez au RDV 2.', res: 'Un tableau dans la fiche, à côté du profil.', guard: 'Valeurs relues ; les normes restent celles du laboratoire.' },
+    { k: 'fiche', g: 'apres', ic: 'note', t: 'Fiche conseils patient', w: 'Après validation du résumé', trig: 'Vous validez le résumé de consultation.', ai: 'Reformule vos recommandations en mots simples.', you: 'Vous relisez avant l’envoi.', res: 'Fiche envoyée par e-mail au patient.', guard: 'Aucun dosage proposé par l’outil.' },
+    { k: 'doc', g: 'apres', ic: 'letter', t: 'Compte rendu au médecin', w: 'Après le RDV 2', trig: 'Le résumé est validé et le patient accepte le partage.', ai: 'Prépare le courrier au médecin traitant à partir du résumé.', you: 'Vous relisez et envoyez.', res: 'Le médecin traitant est informé.', guard: 'Uniquement avec l’accord du patient.' },
+    { k: 'inbox', g: 'quotidien', ic: 'mail', t: 'Tri des e-mails', w: 'À chaque message', trig: 'Un patient écrit au cabinet.', ai: 'Classe le message (déplacement, question, résultats, inquiétude) et propose une réponse.', you: 'Vous envoyez, modifiez ou répondez vous-même.', res: 'Boîte de réception triée.', guard: 'Une inquiétude médicale renvoie toujours vers le médecin ou le 112.' },
+    { k: 'search', g: 'quotidien', ic: 'search', t: 'Recherche en langage courant', w: 'Quand vous voulez', trig: 'Vous posez une question : « fatigués avec un sommeil perturbé ».', ai: 'Cherche dans vos dossiers et explique ce qu’il a compris.', you: 'Vous ouvrez les dossiers trouvés.', res: 'Une liste de patients.', guard: 'Vos dossiers uniquement, recherche journalisée.' },
   ];
   function catalogHtml(S) {
     const next = S.appointments.filter(a => a.status === 'prevu' && a.date >= T).sort((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1))[0];
-    return `<div class="topline"><div><h1>Assistant IA</h1><p>Ce que l’intelligence artificielle peut prendre en charge, et ce qu’elle ne fait jamais.</p></div>${DEMO}</div>
-      <div class="notice small">Dans cette démonstration, aucune IA n’est appelée : les résultats sont produits localement à partir des données fictives, pour montrer ce que vous obtiendriez. Les garde-fous de chaque usage sont ceux de la version réelle (voir <a href="#conformite">Conformité</a>).</div>
-      <div class="grid g-3" style="grid-template-columns:repeat(2,1fr)">${USES.map(([k, t, d, g]) => `<div class="box"><h2 style="font-size:1.12rem">${esc(t)}</h2><p style="margin:0 0 10px">${esc(d)}</p><p class="small muted" style="margin:0 0 14px"><b>Garde-fous :</b> ${esc(g)}</p>${k === 'consult' ? (next ? `<a class="btn sm" href="#consultation/${esc(next.id)}">Essayer sur le prochain rendez-vous</a>` : '') : `<button class="btn ghost sm" type="button" data-try="${k}">Essayer</button>`}</div>`).join('')}</div>
-      <div class="box" style="margin-top:20px"><h2>Ce que l’assistant ne fait jamais</h2><ul style="margin:0;padding-left:18px"><li>Poser un diagnostic, prescrire, ou proposer un dosage.</li><li>Envoyer un message ou un compte rendu sans votre validation.</li><li>Enregistrer sans l’accord du patient.</li><li>Réutiliser les données des patients pour entraîner un modèle.</li><li>Décider seul d’annuler, de facturer ou de refuser un rendez-vous.</li></ul></div>`;
+    const np = next && S.patients.find(p => p.id === next.patient);
+    const row = u => `<div class="use"><span class="ti">${ic(u.ic)}<span><b>${esc(u.t)}</b><small>${esc(u.w)}</small></span></span><span class="c-trig"><em>Déclencheur : </em>${esc(u.trig)}</span><span class="c-ai"><em>L’IA prépare : </em>${esc(u.ai)}</span><span class="c-you"><em>Vous : </em>${esc(u.you)}</span><span><em>Résultat : </em>${esc(u.res)}<small class="c-g">Garde-fou : ${esc(u.guard)}</small></span><span>${u.k === 'consult' ? (next ? `<a class="btn xs ai" href="#consultation/${esc(next.id)}">Essayer</a>` : '') : `<button class="btn xs ai" type="button" data-try="${u.k}">Essayer</button>`}</span></div>`;
+    return `<div class="topline"><div><h1>Assistant IA</h1><p>Ce que l’IA prépare, ce que vous validez. Elle ne décide jamais et n’envoie rien seule.</p></div>${DEMO}</div>
+      <div class="howto">
+        <div class="c-blue"><b>Un déclencheur</b><span>Questionnaire reçu, PDF du labo, enregistrement lancé.</span></div>
+        <div class="c-violet"><b>L’IA prépare</b><span>Un brouillon, jamais une décision.</span></div>
+        <div class="c-green"><b>Vous validez</b><span>Vous relisez, corrigez, acceptez.</span></div>
+        <div class="c-blue"><b>C’est classé ou envoyé</b><span>Au dossier, au patient, au médecin.</span></div>
+      </div>
+      ${next ? `<div class="notice ai small row" style="justify-content:space-between"><span><b>Essayer en direct :</b> la consultation de ${esc(np ? np.first + ' ' + np.last : '')}, ${esc(E.fmt(next.date, true))} à ${esc(next.time.replace(':', ' h '))}. Accord, transcription, résumé, courrier : tout est simulé.</span><a class="btn sm ai" href="#consultation/${esc(next.id)}">Démarrer la consultation</a></div>` : ''}
+      <div class="uses"><div class="use head"><span>Usage</span><span>Déclencheur</span><span>L’IA prépare</span><span>Vous</span><span>Résultat et garde-fou</span><span></span></div>
+        ${GROUPS.map(([g, l, c]) => `<p class="grp-h ${c}">${esc(l)}</p>${USES.filter(u => u.g === g).map(row).join('')}`).join('')}
+      </div>
+      <section class="box" style="margin-top:12px"><h2>Ce que l’assistant ne fait jamais</h2><div class="never"><div>Poser un diagnostic, prescrire ou proposer un dosage</div><div>Envoyer un message ou un compte rendu sans vous</div><div>Enregistrer sans l’accord du patient</div><div>Réutiliser les données pour entraîner un modèle</div><div>Annuler, facturer ou refuser un rendez-vous seul</div></div></section>
+      <p class="small muted" style="margin-top:10px">Démonstration : aucune IA n’est appelée. Les résultats sont produits localement à partir des données fictives, pour montrer ce que vous obtiendriez. Les garde-fous sont ceux de la version réelle (voir <a href="#conformite">Conformité</a>).</p>`;
   }
   function bindCatalog(root, S, h) {
     $$('[data-try]', root).forEach(b => b.addEventListener('click', () => {
@@ -229,6 +256,16 @@ Volgende stap: tweede afspraak na ontvangst van de resultaten.`)}</pre></div><p 
         };
         $('#ai-q').addEventListener('input', run); run();
       }
+      if (k === 'doc') { const p = S.patients[1]; h.dialog(`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.2rem">Compte rendu au médecin traitant</h2>${DEMO}</div><div class="mail"><header><span><b>À :</b> ${esc(p.doctor)}</span><span><b>Objet :</b> Consultation de nutrithérapie, ${esc(p.first + ' ' + p.last)}</span></header><pre>${esc(`Chère Consœur, cher Confrère,
+
+J’ai revu ${p.first} ${p.last} pour la lecture de sa biologie (motif : ${p.motif.toLowerCase()}).
+
+Éléments marquants : ferritine basse, vitamine D insuffisante.
+Ajustements proposés : alimentation, magnésium le soir, réintroduction des oméga-3.
+Suivi prévu dans trois mois.
+
+Bien confraternellement,
+Annick Dejonckheere`)}</pre></div><p class="small muted" style="margin-top:8px">Brouillon rédigé à partir du résumé validé. Envoyé seulement après votre relecture et si le patient accepte le partage.</p>`); }
       if (k === 'fiche') h.dialog(`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.3rem">Fiche conseils</h2>${DEMO}</div><p>Disponible à la fin de chaque consultation résumée : ouvrez le prochain rendez-vous dans l’assistant, terminez l’enregistrement, puis choisissez « Fiche conseils pour le patient ».</p>`);
       if (k === 'trad') h.dialog(`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.3rem">Questionnaire en néerlandais</h2>${DEMO}</div><table class="t"><tbody><tr><td>Besoin de sucre en fin de journée</td><td>Behoefte aan suiker op het einde van de dag</td></tr><tr><td>Réveils fréquents la nuit</td><td>Vaak wakker worden ’s nachts</td></tr><tr><td>Ballonnements</td><td>Opgeblazen gevoel</td></tr><tr><td>Crampes nocturnes</td><td>Nachtelijke krampen</td></tr><tr><td>Peau sèche</td><td>Droge huid</td></tr></tbody></table><p class="small muted" style="margin-top:10px">Le patient choisit sa langue ; vous lisez toujours les réponses en français.</p>`);
     }));
