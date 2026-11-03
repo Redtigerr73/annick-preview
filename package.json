@@ -1,0 +1,8 @@
+{
+  "name": "annick-preview",
+  "private": true,
+  "description": "Démonstration statique : site, questionnaire et espace praticienne avec données fictives.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

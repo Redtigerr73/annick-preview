@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Questionnaire · Annick Dejonckheere (démo)</title>
+  <link rel="preload" href="assets/fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <div id="chrome-top"></div>
+  <main class="form-page" id="contenu">
+    <div class="wrap">
+      <h1 style="font-size:clamp(2rem,4vw,3rem)">Votre questionnaire</h1>
+      <p class="lead" style="margin:12px 0 8px">Il prépare votre première consultation. Répondez le plus précisément possible : il n’y a pas de bonne ou de mauvaise réponse.</p>
+      <div class="progress" aria-hidden="true"><i id="q-bar" style="width:0"></i></div>
+      <p class="small muted" id="q-prog" style="margin-bottom:28px"></p>
+      <div class="form-grid">
+        <div>
+          <ol class="stepper" id="q-steps"></ol>
+          <p class="stepper save small" id="q-save">Enregistré automatiquement sur cet appareil.</p>
+        </div>
+        <div class="panel" id="q-panel"></div>
+      </div>
+    </div>
+  </main>
+  <div id="chrome-foot"></div>
+  <script src="assets/engine.js"></script>
+  <script src="assets/data.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/questionnaire.js"></script>
+</body>
+</html>
