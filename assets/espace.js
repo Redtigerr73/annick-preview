@@ -578,32 +578,114 @@
     ['vous', 4, null, 'Interpréter la biologie', 'Au RDV 2', 'Ajuster le traitement.', null],
     ['vous', 5, null, 'Relire et envoyer', 'Compte rendu, fiche', 'Rien ne part sans votre validation.', null],
   ];
-  function vAutomations() {
+  /* ---------- canaux : une tuile colorée et un pictogramme par destination ---------- */
+  const GLYPH = {
+    email: '<path d="M4 6.5h16v11H4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M4.5 7l7.5 6 7.5-6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>',
+    sms: '<path d="M4 5h16v11h-9l-5 4v-4H4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.5" cy="10.5" r="1.1" fill="#fff"/><circle cx="12" cy="10.5" r="1.1" fill="#fff"/><circle cx="15.5" cy="10.5" r="1.1" fill="#fff"/>',
+    whatsapp: '<path d="M12 3.6a8.4 8.4 0 0 0-7.2 12.7L3.7 20.3l4.1-1.1A8.4 8.4 0 1 0 12 3.6z" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.2 8.4c.2-.4.4-.4.7-.4h.4c.2 0 .3.1.4.3l.6 1.4c.1.2 0 .3-.1.5l-.4.5c.5.9 1.2 1.6 2.1 2.1l.5-.4c.2-.1.3-.2.5-.1l1.4.6c.2.1.3.2.3.4v.4c0 .3-.1.5-.4.7-.5.3-1.4.4-2.8-.4a7.4 7.4 0 0 1-2.9-2.9c-.8-1.4-.7-2.3-.3-2.7z" fill="#fff"/>',
+    instagram: '<rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.6" cy="7.4" r="1.1" fill="#fff"/>',
+    agenda: '<rect x="4" y="5.5" width="16" height="14" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><rect x="8" y="13" width="3" height="3" rx=".6" fill="#fff"/>',
+    dossier: '<path d="M3.5 7a1.5 1.5 0 0 1 1.5-1.5h4.2l2 2H19a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>',
+    cabinet: '<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="#fff" stroke-width="1.8"/>',
+    medecin: '<rect x="5" y="10.5" width="14" height="9.5" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="15" r="1.4" fill="#fff"/>',
+  };
+  const DEST = {
+    email: ['E-mail', 'Adresse du cabinet, domaine vérifié', 'Le détail complet : documents, consignes, liens.'],
+    sms: ['SMS', 'Prestataire européen, expéditeur « Cabinet AD »', 'Logistique seulement : date, heure, lieu, lien.'],
+    whatsapp: ['WhatsApp', 'WhatsApp Business, modèles approuvés', 'Logistique seulement, au choix du patient.'],
+    instagram: ['Instagram', 'Compte professionnel du cabinet', 'Lien de prise de RDV et conseils généraux. Jamais de santé personnelle.'],
+    agenda: ['Agenda', 'Google Agenda ou Outlook', 'Créneaux synchronisés, plus de double saisie.'],
+    dossier: ['Dossier patient', 'Espace praticienne, chiffré', 'Scores, synthèses, résumés, biologie.'],
+    cabinet: ['Alerte cabinet', 'Dans cet espace et par e-mail', 'Ce qui demande votre décision.'],
+    medecin: ['Médecin traitant', 'E-mail ou messagerie sécurisée', 'Compte rendu, avec l’accord du patient.'],
+  };
+  const logo = (k, small) => `<span class="logo lg-${k}${small ? ' sm' : ''}" title="${esc(DEST[k][0])}" role="img" aria-label="${esc(DEST[k][0])}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[k]}</svg></span>`;
+  const TRIG = {
+    rdv: '<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14.5l2 2 4-4"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    form: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+    absent: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11.5-4.2M16 15l5 5M21 15l-5 5"/>',
+    done: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.8 2.8L16.2 9.6"/>',
+    drop: '<path d="M12 3.5s6 6.4 6 10.8a6 6 0 0 1-12 0c0-4.4 6-10.8 6-10.8z"/>',
+    repeat: '<path d="M17 3.5l3 3-3 3"/><path d="M4 11.5v-1a4 4 0 0 1 4-4h12M7 20.5l-3-3 3-3"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/>',
+  };
+  const tic = k => GLYPH[k] ? logo(k) : `<span class="tic"><svg viewBox="0 0 24 24" aria-hidden="true">${TRIG[k]}</svg></span>`;
+  const PAT = ['email', 'sms', 'whatsapp'];
+  /* [phase, déclencheur (icône, texte, quand), rôle, action, détail, destinations, règle, modèle compté, valeur par défaut] */
+  const FLOWS = [
+    [0, ['rdv', 'Rendez-vous pris en ligne', 'à toute heure'], 'auto', 'Confirmation et lien du questionnaire', 'Date, cabinet, échéance du questionnaire, documents à apporter.', [...PAT, 'agenda'], 'confirmation', 'confirmation'],
+    [0, ['instagram', 'Message reçu sur Instagram', '« Comment prendre rendez-vous ? »'], 'ia', 'Réponse avec le lien de prise de RDV', 'Toute question de santé est renvoyée vers la consultation, jamais traitée en message.', ['instagram'], 'insta_dm', null, true],
+    [0, ['email', 'E-mail d’un patient', 'à chaque message'], 'ia', 'Classé et réponse proposée', 'Déplacement, question pratique, résultats ou inquiétude (renvoi vers le médecin ou le 112).', ['email', 'cabinet'], null],
+    [1, ['form', 'Questionnaire reçu', 'en ligne ou scanné'], 'auto', 'Scores des 23 axes et points de vigilance', 'Calculés à la réception, rangés dans la fiche.', ['dossier'], null],
+    [1, ['clock', 'J-37, questionnaire manquant', 'rappel'], 'auto', 'Rappel du questionnaire', 'Seulement si le questionnaire n’est pas arrivé.', PAT, 'rappel1', 'rappel1'],
+    [1, ['clock', 'J-32, toujours manquant', 'dernier rappel'], 'auto', 'Dernier rappel', 'Mentionne le risque d’annulation du rendez-vous.', PAT, 'rappel2', 'rappel2'],
+    [1, ['clock', 'J-30, toujours manquant', 'décision'], 'auto', 'Alerte au cabinet', 'Vous décidez : relancer, garder ou libérer le créneau.', ['cabinet'], 'alerte'],
+    [2, ['clock', 'La veille du rendez-vous', 'J-1, 10 h'], 'auto', 'Rappel de la veille', 'Carte d’identité, 2 vignettes de mutuelle, dernière prise de sang.', PAT, 'veille', 'veille'],
+    [2, ['form', 'La veille, questionnaire reçu', 'J-1'], 'ia', 'Synthèse pré-consultation', 'Ce qui ressort, questions à poser, biologie à envisager.', ['dossier'], null],
+    [3, ['mic', 'Enregistrement lancé', 'avec l’accord du patient'], 'ia', 'Transcription et résumé structuré', 'Neuf rubriques à valider, audio supprimé ensuite.', ['dossier'], null],
+    [3, ['absent', 'Patient absent, RDV non annulé', 'jour J'], 'auto', 'Alerte et règle de facturation', 'Le patient reçoit le rappel de la règle du cabinet.', ['cabinet', 'email'], null],
+    [4, ['done', 'RDV 1 terminé', 'jour J'], 'auto', 'Demande de biologie et consignes du labo', 'Laboratoire spécialisé, à jeun selon les analyses.', ['email'], 'biologie', 'biologie'],
+    [4, ['drop', 'Résultats du labo reçus', 'PDF'], 'ia', 'Valeurs extraites, écarts mis en évidence', 'À côté du profil fonctionnel, pour le RDV 2.', ['dossier', 'cabinet'], null],
+    [5, ['done', 'RDV 2 terminé', 'résumé validé'], 'ia', 'Compte rendu au médecin traitant', 'Envoyé après votre relecture, si le patient l’accepte.', ['medecin'], 'medecin', 'medecin'],
+    [5, ['done', 'Résumé validé', 'après chaque consultation'], 'ia', 'Fiche conseils pour le patient', 'Vos recommandations en mots simples, dans sa langue.', ['email', 'whatsapp'], 'fiche', null, true],
+    [5, ['done', 'Deux consultations faites', 'suivi'], 'auto', 'Proposition d’hormonologie', 'Rendez-vous avec le Dr Résimont, si vous le validez.', ['email'], 'hormonologie'],
+    [5, ['clock', 'Trois mois après le dernier RDV', 'suivi'], 'auto', 'Message de suivi et lien de rendez-vous', 'Garder le lien sans relance téléphonique.', PAT, 'suivi3', null, true],
+    [6, ['repeat', 'Chaque lundi', 'communication'], 'ia', 'Conseil nutrition de la semaine', 'Rédigé par l’IA, publié après votre validation. Aucune donnée patient.', ['instagram'], 'insta_post', null, false],
+  ];
+  const FPH = ['Prise de rendez-vous', 'Avant le RDV 1', 'La veille', 'Pendant la consultation', 'Après le RDV 1', 'Après le RDV 2 et suivi', 'Communication du cabinet'];
+  let aTab = 'flux', aDest = '';
+  const ruleOn = f => (f[6] ? (S.automations[f[6]] != null ? S.automations[f[6]] : f[8] !== false) : true);
+  function flowsHtml() {
     const count = tpl => tpl ? S.emails.filter(m => m.template === tpl).length : 0;
-    const keyed = AUTOS.filter(x => x[2]), active = keyed.filter(x => S.automations[x[2]]).length;
-    const month = T.slice(0, 7), sentMonth = S.emails.filter(m => m.status === 'envoye' && m.at.slice(0, 7) === month).length;
-    const planned7 = S.emails.filter(m => m.status === 'planifie' && m.at <= E.iso(E.addDays(TODAY, 7))).length;
+    const uses = k => FLOWS.filter(f => f[5].includes(k));
+    const hub = Object.keys(DEST).map(k => { const on = ['dossier', 'cabinet', 'medecin', 'agenda'].includes(k) || (S.channels || {})[k]; const n = uses(k).filter(ruleOn).length; return `<button type="button" class="dest${aDest === k ? ' on' : ''}" data-dest="${k}" aria-pressed="${aDest === k}">${logo(k)}<span><b>${esc(DEST[k][0])}</b><small>${n} automatisation${n > 1 ? 's' : ''} · ${on ? 'connecté (démo)' : 'à connecter'}</small></span></button>`; }).join('');
+    const arrow = '<span class="arr" aria-hidden="true"><svg viewBox="0 0 28 12"><path d="M1 6h24M20 1.5L25.5 6 20 10.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+    const row = f => {
+      const [, [ti, tt, tw], role, act, det, dest, key, tpl] = f, on = ruleOn(f), n = count(tpl);
+      return `<div class="fl${on ? '' : ' off'}">
+        <div class="f-trig">${tic(ti)}<span><b>${esc(tt)}</b><small>${esc(tw)}</small></span></div>${arrow}
+        <div class="f-act ${role === 'ia' ? 'c-violet' : 'c-blue'}"><span class="chip r-${role}">${role === 'ia' ? 'IA · vous validez' : 'Automatique'}</span><b>${esc(act)}</b><small>${esc(det)}</small></div>${arrow}
+        <div class="f-to"><span class="logos">${dest.map(k => logo(k)).join('')}</span><small>${esc(dest.map(k => DEST[k][0]).join(' · '))}${dest.some(k => PAT.includes(k)) && dest.filter(k => PAT.includes(k)).length > 1 ? ', selon le choix du patient' : ''}</small></div>
+        <div class="f-ctl">${key ? `<input class="tg" type="checkbox" role="switch" aria-label="${esc(act)}" data-auto="${key}"${on ? ' checked' : ''}>` : '<span class="chip ok">toujours actif</span>'}${n ? `<small>${n} envois</small>` : ''}</div>
+      </div>`;
+    };
+    const shown = FLOWS.filter(f => !aDest || f[5].includes(aDest));
+    return `<div class="hub">${hub}</div>
+      ${aDest ? `<p class="small" style="margin:0 0 8px">${logo(aDest, true)} <b>${esc(DEST[aDest][0])}</b> · ${esc(DEST[aDest][1])}. ${esc(DEST[aDest][2])} <button type="button" class="btn ghost xs" data-dest="">Tout afficher</button></p>` : ''}
+      <div class="flowlist">${FPH.map((ph, i) => { const l = shown.filter(f => f[0] === i); return l.length ? `<p class="grp-h c-slate">${esc(ph)}</p>${l.map(row).join('')}` : ''; }).join('')}</div>`;
+  }
+  function matrixHtml() {
+    const count = tpl => tpl ? S.emails.filter(m => m.template === tpl).length : 0;
     const lane = LANES.reduce((o, l) => { o[l[0]] = l; return o; }, {});
-    const au = x => { const [r, , key, t, w, d, chs, tpl] = x, on = !key || S.automations[key], n = count(tpl), L = lane[r]; return `<div class="au ${L[3]}${on ? '' : ' offr'}"><div class="hd"><b>${esc(t)}</b>${key ? `<input class="tg" type="checkbox" role="switch" aria-label="${esc(t)}" data-auto="${key}"${on ? ' checked' : ''}>` : ''}</div><span class="w">${esc(w)}</span><p>${esc(d)}</p><div class="row"><span class="chip r-${r} m-role">${esc(L[1])}</span>${chs ? `<span class="chs">${chs.map(c => `<i class="ch-${c}">${esc(E.CHANNELS[c])}</i>`).join('')}</span>` : ''}${n ? `<span class="chip">${n} envois</span>` : ''}</div></div>`; };
+    const au = x => { const [r, , key, t, w, d, chs, tpl] = x, on = !key || S.automations[key], n = count(tpl), L = lane[r]; return `<div class="au ${L[3]}${on ? '' : ' offr'}"><div class="hd"><b>${esc(t)}</b>${key ? `<input class="tg" type="checkbox" role="switch" aria-label="${esc(t)}" data-auto="${key}"${on ? ' checked' : ''}>` : ''}</div><span class="w">${esc(w)}</span><p>${esc(d)}</p><div class="row"><span class="chip r-${r} m-role">${esc(L[1])}</span>${chs ? `<span class="logos">${chs.map(c => logo(c, true)).join('')}</span>` : ''}${n ? `<span class="chip">${n} envois</span>` : ''}</div></div>`; };
     let grid = LANES.map((l, li) => `<div class="ln ${l[3]}" style="grid-row:${li + 2}">${esc(l[1])}<small>${esc(l[2])}</small></div>`).join('');
     PHASES.forEach(([t, s], pi) => {
       grid += `<div class="ph" style="grid-column:${pi + 2}">${esc(t)}<small>${esc(s)}</small></div>`;
       LANES.forEach((l, li) => { const items = AUTOS.filter(x => x[0] === l[0] && x[1] === pi); grid += `<div class="cell" style="grid-column:${pi + 2};grid-row:${li + 2}">${items.map(au).join('') || '<div class="none">Rien à faire</div>'}</div>`; });
     });
+    return `<div class="matrix" role="table" aria-label="Automatisations par phase et par rôle">${grid}</div>`;
+  }
+  function vAutomations() {
+    const keyed = FLOWS.filter(f => f[6]), active = keyed.filter(ruleOn).length;
+    const month = T.slice(0, 7), sentMonth = S.emails.filter(m => m.status === 'envoye' && m.at.slice(0, 7) === month).length;
+    const planned7 = S.emails.filter(m => m.status === 'planifie' && m.at <= E.iso(E.addDays(TODAY, 7))).length;
     const plan = E.reminderPlan(E.addDays(TODAY, 45), TODAY);
-    view.innerHTML = head('Automatisations', 'Qui fait quoi, à quel moment, sur quel canal. Chaque interrupteur active ou coupe une règle.') + `
+    view.innerHTML = head('Automatisations', 'Ce qui déclenche chaque tâche, ce qu’elle fait, et par où elle part.', `<span class="legendbar" style="margin:0">${roleChip('auto')}${roleChip('ia')}</span>`) + `
       <div class="kpis k4">
-        <div class="kpi c-green"><b>${active}/${keyed.length}</b><span>Règles actives</span><small>modifiables à tout moment</small></div>
+        <div class="kpi c-green"><b>${active}/${keyed.length}</b><span>Règles actives</span><small>un interrupteur par règle</small></div>
         <div class="kpi c-blue"><b>${sentMonth}</b><span>Messages ce mois</span><small>aucun écrit à la main</small></div>
         <div class="kpi c-slate"><b>${planned7}</b><span>Planifiés sous 7 jours</span><small>partiront seuls</small></div>
         <div class="kpi c-violet"><b>0</b><span>Envoi sans validation</span><small>pour tout ce que prépare l’IA</small></div>
       </div>
-      <div class="legendbar">${roleChip('auto')}<span class="muted">part tout seul</span>${roleChip('ia')}<span class="muted">brouillon, vous validez</span>${roleChip('vous')}<span class="muted">reste humain</span><span class="chip ch-email">E-mail</span><span class="chip ch-sms">SMS</span><span class="chip ch-whatsapp">WhatsApp</span><span class="muted">selon le choix du patient</span></div>
-      <div class="matrix" role="table" aria-label="Automatisations par phase et par rôle">${grid}</div>
+      <div class="tabs"><button type="button" data-at="flux" aria-pressed="${aTab === 'flux'}">Flux par tâche</button><button type="button" data-at="phases" aria-pressed="${aTab === 'phases'}">Vue par phase et par rôle</button></div>
+      ${aTab === 'flux' ? flowsHtml() : matrixHtml()}
       <div class="grid g-2" style="margin-top:12px">
-        <section class="box"><h2>Exemple : un rendez-vous pris aujourd’hui pour le ${esc(fmtShort(E.iso(E.addDays(TODAY, 45))))}</h2><ol class="timeline">${plan.map((s, i) => `<li class="${i === 0 ? 'done' : ''}"><b>${esc(E.fmt(s.at))}</b> ${s.key === 'alerte' ? roleChip('vous') : roleChip('auto')}<br><span class="small">${esc(s.label)}</span></li>`).join('')}</ol></section>
-        <section class="box"><h2>Ce qui ne part jamais sans vous</h2><ul class="list todo">${['Le contenu de la consultation et les recommandations', 'L’envoi d’un compte rendu au médecin', 'La décision d’annuler un rendez-vous sans questionnaire', 'Toute réponse personnelle à un patient', 'Tout texte rédigé par l’IA'].map(t => `<li class="c-green"><i aria-hidden="true"></i><span>${esc(t)}</span><span></span></li>`).join('')}</ul></section>
+        <section class="box"><h2>Exemple : un rendez-vous pris aujourd’hui pour le ${esc(fmtShort(E.iso(E.addDays(TODAY, 45))))}</h2><ol class="timeline">${plan.map((s, i) => `<li class="${i === 0 ? 'done' : ''}"><b>${esc(E.fmt(s.at))}</b> ${s.key === 'alerte' ? logo('cabinet', true) : `<span class="logos">${PAT.map(k => logo(k, true)).join('')}</span>`}<br><span class="small">${esc(s.label)}</span></li>`).join('')}</ol></section>
+        <section class="box"><h2>Ce qui ne part jamais sans vous</h2><ul class="list todo">${['Le contenu de la consultation et les recommandations', 'L’envoi d’un compte rendu au médecin', 'La décision d’annuler un rendez-vous sans questionnaire', 'Toute réponse personnelle à un patient', 'Tout texte rédigé par l’IA, y compris les publications Instagram'].map(t => `<li class="c-green"><i aria-hidden="true"></i><span>${esc(t)}</span><span></span></li>`).join('')}</ul></section>
       </div>`;
+    $$('[data-at]').forEach(b => b.addEventListener('click', () => { aTab = b.dataset.at; vAutomations(); }));
+    $$('[data-dest]').forEach(b => b.addEventListener('click', () => { aDest = aDest === b.dataset.dest ? '' : b.dataset.dest; vAutomations(); }));
     $$('[data-auto]').forEach(i => i.addEventListener('change', () => { S.automations[i.dataset.auto] = i.checked; persist(); toast(i.checked ? 'Règle activée' : 'Règle désactivée'); vAutomations(); }));
   }
 
@@ -617,6 +699,7 @@
           <div class="switch"><div><b>E-mail</b><small>Connecté · domaine vérifié (démo)</small></div><input type="checkbox" role="switch" aria-label="E-mail" data-ch="email"${S.channels.email ? ' checked' : ''}></div>
           <div class="switch"><div><b>SMS</b><small>${S.channels.sms ? 'Prestataire européen · 0,07 € par SMS (démo)' : 'Déconnecté'}</small></div><input type="checkbox" role="switch" aria-label="SMS" data-ch="sms"${S.channels.sms ? ' checked' : ''}></div>
           <div class="switch"><div><b>WhatsApp Business</b><small>${S.channels.whatsapp ? 'Numéro vérifié · 4 modèles approuvés (démo)' : 'Déconnecté'}</small></div><input type="checkbox" role="switch" aria-label="WhatsApp Business" data-ch="whatsapp"${S.channels.whatsapp ? ' checked' : ''}></div>
+          <div class="switch"><div><b>Instagram</b><small>${S.channels.instagram ? 'Compte professionnel relié (démo)' : 'Déconnecté'}</small></div><input type="checkbox" role="switch" aria-label="Instagram" data-ch="instagram"${S.channels.instagram ? ' checked' : ''}></div>
           <p class="small muted" style="margin:8px 0 0">SMS et WhatsApp ne portent que la logistique : date, heure, lieu, lien. Désinscription par « STOP ».</p></section>
         <section class="box"><h2>Démonstration</h2><p class="small">Les données sont fictives et stockées dans ce navigateur. Remettre à zéro efface les rendez-vous et questionnaires ajoutés pendant la visite.</p><button class="btn sm" type="button" id="reset">Remettre la démo à zéro</button></section>
       </div>`;
@@ -629,7 +712,7 @@
         return;
       }
       if (k === 'email' && !i.checked) { i.checked = true; toast('L’e-mail reste le canal de référence'); return; }
-      S.channels[k] = i.checked; persist(); toast(E.CHANNELS[k] + (i.checked ? ' connecté' : ' déconnecté')); route();
+      S.channels[k] = i.checked; persist(); toast((E.CHANNELS[k] || 'Instagram') + (i.checked ? ' connecté' : ' déconnecté')); route();
     }));
     $('#reset').addEventListener('click', () => { Demo.reset(); S = Demo.load(); toast('Démo remise à zéro'); location.hash = '#aujourdhui'; route(); });
   }

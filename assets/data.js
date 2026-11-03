@@ -135,7 +135,7 @@
 
     return {
       version: 2, builtOn: E.iso(today), lieux: LIEUX, types: TYPES, patients, appointments, submissions, emails, notes,
-      channels: { email: true, sms: true, whatsapp: true },
+      channels: { email: true, sms: true, whatsapp: true, instagram: true },
       automations: { confirmation: true, rappel1: true, rappel2: true, alerte: true, veille: true, biologie: true, medecin: true, hormonologie: true },
     };
   }

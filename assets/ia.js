@@ -307,12 +307,13 @@ Annick Dejonckheere`)}</pre></div><p class="small muted" style="margin-top:8px">
           'Information préalable et accord explicite du patient, recueillis et horodatés avant le démarrage ; le bouton reste bloqué sans accord.',
           'Refus possible sans aucune conséquence sur la prise en charge.',
           'Finalité unique : rédiger le résumé. Pas d’écoute par un tiers, pas de réutilisation.'])}
-        ${block('SMS et WhatsApp', [
+        ${block('SMS, WhatsApp et Instagram', [
           'Logistique uniquement : date, heure, cabinet et un lien. Aucune information de santé, aucun motif de consultation dans le message.',
           'Canal choisi par le patient (accord à la prise de rendez-vous), désinscription par « STOP » ou depuis le lien ; l’e-mail reste toujours disponible.',
           'SMS : prestataire établi dans l’Union, contrat de sous-traitance (<b>art. 28</b>).',
           'WhatsApp Business : Meta est sous-traitant et peut transférer des données hors Union (<b>chap. V</b>) ; à couvrir par le cadre UE-États-Unis (Data Privacy Framework) ou à remplacer par le SMS si le cabinet préfère s’en passer.',
-          'Modèles de messages fixes, validés à l’avance : pas de conversation libre sur la santé par messagerie.'])}
+          'Modèles de messages fixes, validés à l’avance : pas de conversation libre sur la santé par messagerie.',
+          'Instagram : réponses limitées au lien de prise de rendez-vous et aux informations pratiques ; une question de santé est renvoyée vers la consultation. Les publications ne contiennent aucune donnée de patient et sont validées avant parution.'])}
         ${block('AI Act (règlement (UE) 2024/1689)', [
           'Le cabinet est « déployeur » d’outils d’IA d’usage général, utilisés pour la documentation : transcription, résumé, traduction, tri.',
           'Transparence (<b>art. 50</b>) : les patients savent quand un texte est rédigé avec l’IA et quand ils échangent avec un outil automatisé.',
